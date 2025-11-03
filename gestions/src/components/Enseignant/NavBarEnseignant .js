@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // ✅ Ajout useNavigate
-import '../App.css';
-import NavBarEtudiant from './navBar/NavBarEtudiant';
-import NavBarEnseignant from './navBar/NavBarEnseignant ';
-import NavBarAdmin from './navBar/NavBarAdmin ';
+import './../../App.css';
 
-const NavBar = () => {
+const NavBarEnseignant = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate(); // ✅
   const user = JSON.parse(localStorage.getItem('user'));
@@ -20,26 +17,17 @@ const NavBar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
-    localStorage.removeItem('token');        // ou 'user', selon ta logique
-    localStorage.removeItem('role');         // si stocké
+    localStorage.removeItem('token');        
+    localStorage.removeItem('role');         
     navigate('/');   
-    window.location.reload();                   // redirection vers /login
+    window.location.reload();                   
   };
 
-  const renderNavBar = () => {
-    if (role === "admin") {
-      return <NavBarAdmin col={collapsed} />;
-    }
-    if (role === "enseignant") {
-      return <NavBarEnseignant col={collapsed} />;
-    }
-    return <NavBarEtudiant col={collapsed} />;
-  };
 
   const renderProfil = () => {
     return (
       <div>
-        <Link to="/profil" className="text-decoration-none">
+        <Link to="/espaceEnseignet/profil" className="text-decoration-none">
           <div className="ms-3 profile-info">
             <h6 className="text-white mb-0">{user.user.nom}</h6>
             <small className="text-light">{role}</small>
@@ -63,7 +51,16 @@ const NavBar = () => {
         {!collapsed && <h4 className="logo-text fw-bold mb-0">NOM DE L'INSTITUT</h4>}
       </div>
 
-      {renderNavBar()}
+      <div className="nav flex-column">
+        <Link to="/espaceEnseignet/marquer-note" className="sidebar-link text-decoration-none p-3">
+          <i className="fas fa-pen-alt me-3"></i>
+          {!collapsed && <span>Marquer les notes</span>}
+        </Link>
+        <Link to="/espaceEnseignet/marquer-absence" className="sidebar-link text-decoration-none p-3">
+          <i className="fas fa-user-check me-3"></i>
+          {!collapsed && <span>Marquer les absences</span>}
+        </Link>
+      </div>
 
       <div className="profile-section mt-auto p-4">
         <div className="d-flex align-items-center">
@@ -74,4 +71,4 @@ const NavBar = () => {
   );
 };
 
-export default NavBar;
+export default NavBarEnseignant;

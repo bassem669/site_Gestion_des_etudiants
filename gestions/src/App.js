@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./components/Home";
+import Home from "./components/HomeEtudiant";
 
 import MarquerNote from "./components/Enseignant/MarquerNote";
 import MarquerAbsence from "./components/Enseignant/MarquerAbsence";
@@ -15,6 +15,9 @@ import GererMatieres from "./components/Admin/GererMatiere";
 import Login from "./components/Login";
 import AffecterEtudiant from "./components/Admin/AffecterEtudiant";
 import GestionEnseignements from "./components/Admin/GestionEnseignements";
+import HomeEtudiant from "./components/HomeEtudiant";
+import HomeEnseignant from "./components/HomeEnseingant";
+import HomeAdmin from "./components/HomeAdmin";
 
 
 function App() {
@@ -22,22 +25,38 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Home />}>
-            <Route path="marquer-absence" element={<MarquerAbsence />} />
-            <Route path="marquer-note" element={<MarquerNote />} />
+
+          <Route path="" element={<Login />} />
+          
+          <Route path="espaceEtudiant" element={<HomeEtudiant />}>
             <Route path="consulter-note" element={<ConsulterNote />} />
             <Route path="consulter-absence" element={<ConsulterAbsence />} />
-            <Route path="listeAbsence" element={<ListeAbsencesEtudiants />} />
-            <Route path="listeNote" element={<ListeNotesEtudiants />} />
+            <Route path="profil" element={<Profil />} />
+          </Route>
+
+          <Route path="espaceEnseignet" element={<HomeEnseignant />}>
+            <Route path="marquer-absence" element={<MarquerAbsence />} />
+            <Route path="marquer-note" element={<MarquerNote />} />
+            <Route path="profil" element={<Profil />} />
+          </Route>
+
+          <Route path="espaceAdministrateur" element={<HomeAdmin />}>
             <Route path="gererComptes" element={<GererComptes />} />
             <Route path="affecterEtudiant" element={<AffecterEtudiant />} />
             <Route path="gestionEnseignements" element={<GestionEnseignements />} />
             <Route path="gererClasses" element={<GererClasses />} />
-             <Route path="gererMatieres" element={<GererMatieres />} />
+            <Route path="gererMatieres" element={<GererMatieres />} />
+            <Route path="listeAbsence" element={<ListeAbsencesEtudiants />} />
+            <Route path="listeNote" element={<ListeNotesEtudiants />} />
             <Route path="profil" element={<Profil />} />
-
           </Route>
+            
+            
+            
+            
+            
+
+          
         </Routes>
       </BrowserRouter>
     </div>

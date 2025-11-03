@@ -13,30 +13,34 @@ from .serializers import AdministrateurSerializer, EnseignantSerializer, Etudian
 def login(request):
     email = request.data.get('user').get('email')
     password = request.data.get('user').get('password')
-
+    redirect = ""
     if not email or not password:
         return JsonResponse({'error': 'Email et mot de passe requis'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         user = Utilisateur.objects.get(email=email)
-        if check_password(password, user.password):
-            role = user.role.lower()
-            if role == "etudiant":
-                etudiant = Etudiant.objects.get(user=user)
-                serializer = EtudiantSerializer(etudiant)
-            elif role == "enseignant":
-                enseignant = Enseignant.objects.get(user=user)
-                serializer = EnseignantSerializer(enseignant)
-            elif role == "admin":
-                admin = Administrateur.objects.get(user=user)
-                serializer = AdministrateurSerializer(admin)
-            else:
-                return JsonResponse({'error': 'Rôle non reconnu'}, status=status.HTTP_400_BAD_REQUEST)
-
-            return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+        
+        role = user.role.lower()
+        if role == "etudiant":
+            etudiant = Etudiant.objects.get(user=user)
+            serializer = EtudiantSerializer(etudiant)
+            redirect = "/espaceEtudiant"
+        elif role == "enseignant":
+            enseignant = Enseignant.objects.get(user=user)
+            serializer = EnseignantSerializer(enseignant)
+            redirect = "/espaceEnseignet"
+        elif role == "admin":
+            admin = Administrateur.objects.get(user=user)
+            serializer = AdministrateurSerializer(admin)
+            redirect = "/espaceadministrateur"
         else:
-            return JsonResponse({'error': 'Mot de passe incorrect'}, status=status.HTTP_401_UNAUTHORIZED)
+            return JsonResponse({'error': 'Rôle non reconnu'}, status=status.HTTP_400_BAD_REQUEST)
 
+        return JsonResponse({
+            "user": serializer.data,
+            "redir": redirect
+        }, status=status.HTTP_200_OK)
+        
     except Utilisateur.DoesNotExist:
         return JsonResponse({'error': 'Email non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -61,8 +65,7 @@ def ajouter_user(request) :
     
 
 @api_view(['PUT'])
-def update_user(request):
-    cin = request.data.get('user', {}).get('CIN')
+def update_user(request, cin):
     if not cin:
         return JsonResponse({'error': 'CIN manquant'}, status=400)
 
@@ -70,44 +73,56 @@ def update_user(request):
         user = Utilisateur.objects.get(CIN=cin)
         nvRole = request.data.get('user', {}).get('role', '').lower()
         ancienRole = user.role.lower()
+        data = request.data.copy()
+        data["user"]["password"] = user.password # garde le password pour le nouveau profil
 
+        # --- Même rôle ---
         if ancienRole == nvRole:
-            # Mise à jour sans changer de rôle
             if ancienRole == 'etudiant':
                 instance = Etudiant.objects.get(user=user)
-                serializer = EtudiantSerializer(instance, data=request.data, partial=True)
+                serializer = EtudiantSerializer(instance, data=data, partial=True)
             elif ancienRole == 'enseignant':
                 instance = Enseignant.objects.get(user=user)
-                serializer = EnseignantSerializer(instance, data=request.data, partial=True)
+                serializer = EnseignantSerializer(instance, data=data, partial=True)
             elif ancienRole == 'admin':
                 instance = Administrateur.objects.get(user=user)
-                serializer = AdministrateurSerializer(instance, data=request.data, partial=True)
+                serializer = AdministrateurSerializer(instance, data=data, partial=True)
             else:
                 return JsonResponse({'error': 'Rôle invalide'}, status=400)
+
+        # --- Changement de rôle ---
         else:
-            # Changement de rôle - nécessite une recréation
+            # Supprimer l'ancien profil spécifique
+            if ancienRole == 'etudiant':
+                Etudiant.objects.filter(user=user).delete()
+            elif ancienRole == 'enseignant':
+                Enseignant.objects.filter(user=user).delete()
+            elif ancienRole == 'admin':
+                Administrateur.objects.filter(user=user).delete()
+
+            # Créer le nouveau profil lié
             if nvRole == 'etudiant':
-                serializer = EtudiantSerializer(data=request.data)
+                serializer = EtudiantSerializer(data=data)
             elif nvRole == 'enseignant':
-                serializer = EnseignantSerializer(data=request.data)
+                serializer = EnseignantSerializer(data=data)
             elif nvRole == 'admin':
-                serializer = AdministrateurSerializer(data=request.data)
+                serializer = AdministrateurSerializer(data=data)
             else:
                 return JsonResponse({'error': 'Nouveau rôle invalide'}, status=400)
 
-            if serializer.is_valid():
-                user.delete()  # Supprime l'ancien après validation
-
-        if serializer.is_valid():
+        # --- Validation et sauvegarde ---
+        valid = serializer.is_valid()
+        if valid:
             serializer.save()
             return JsonResponse(serializer.data)
-        return JsonResponse(serializer.errors, status=400)
+        else:
+            return JsonResponse({"errors": serializer.errors, "data": data}, status=400)
 
     except Utilisateur.DoesNotExist:
         return JsonResponse({'error': 'Utilisateur non trouvé'}, status=404)
     except (Etudiant.DoesNotExist, Enseignant.DoesNotExist, Administrateur.DoesNotExist):
         return JsonResponse({'error': 'Profil spécifique non trouvé'}, status=404)
-    
+
 
 @api_view(['DELETE'])
 def delete_user(request,cin):

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { redirect, useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate(); // 👈 hook
@@ -20,27 +20,11 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('user', JSON.stringify(data));
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.user.role);
+        localStorage.setItem('user', JSON.stringify(data.user));
 
-        // Redirection après succès
-        switch (data.user.role) {
-          case 'etudiant':
-            navigate('/consulter-note');
-            window.location.reload();
-            break;
-          case 'enseignant':
-            navigate('/marquer-note');
-            window.location.reload();
-            break;
-          case 'admin':
-            navigate('/gererComptes');
-            window.location.reload();
-            break;
-          default:
-            navigate('/');
-        }
+        
+      navigate(data.redir);
+
       } else {
         setErrorMsg(data.error || 'Erreur de connexion');
       }
